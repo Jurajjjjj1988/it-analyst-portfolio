@@ -264,7 +264,10 @@ Step 5: Payment                              (card / Apple Pay)
 → Automatic activation: SIM + tariff + insurance
 
 Total time: ~15 minutes
-Steps: 5 (reduced from 8)
+Steps: 5 customer-facing steps (reduced from 8)
+
+Note: credit check, contract generation, SIM activation, and insurance
+      provisioning happen in the background — not counted as customer steps.
 ```
 
 ### Where steps were removed
