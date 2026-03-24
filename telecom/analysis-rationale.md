@@ -1,4 +1,4 @@
-# Analysis Rationale — Telecom Purchase Flow
+# Analysis Rationale — Telekom Purchase Flow
 
 > This document explains the reasoning behind every decision made during the process analysis and optimisation project. It covers the theoretical foundations, methodology, and a walkthrough of each deliverable — written so the analysis can be explained and defended in a technical discussion.
 

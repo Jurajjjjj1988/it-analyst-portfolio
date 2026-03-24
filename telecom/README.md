@@ -1,4 +1,4 @@
-# Telecom — Online Purchase Flow
+# Telekom — Online Purchase Flow
 
 Analysis of the e-commerce purchase journey for a bundled product offer: smartphone on instalment + monthly tariff + device insurance.
 

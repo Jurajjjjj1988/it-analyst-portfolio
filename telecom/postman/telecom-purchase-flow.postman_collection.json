@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Telecom — Purchase Flow API",
+    "name": "Telekom — Purchase Flow API",
     "description": "Integration points for the online handset purchase flow.\n\nCoverage: WebShop → CRM → Credit Bureau → BSS/Billing → Insurance API → Notifications\n\nBased on a process optimisation project. All endpoints are illustrative — modelled from the documented integration architecture.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

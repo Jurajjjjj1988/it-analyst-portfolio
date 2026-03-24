@@ -7,7 +7,7 @@ Diagrams are written as code (Mermaid) so they version-control cleanly alongside
 
 ## Projects
 
-### [Telecom — Online Purchase Flow](telecom/)
+### [Telekom — Online Purchase Flow](telecom/)
 
 Mapped and optimised the e-commerce purchase journey for a bundled offer (smartphone + tariff + device insurance).
 
