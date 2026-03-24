@@ -1,44 +1,22 @@
-# Business Process Diagrams
+# IT Analyst Portfolio
 
-> Diagrams from a real process optimisation project at a telecommunications company.
-> The goal was to reduce the number of steps in the online purchase journey for bundled products (handset + tariff + insurance).
-
----
-
-## Context
-
-The e-commerce team identified that the multi-step purchase funnel was causing significant drop-off — customers were abandoning the flow between product selection and contract signing.
-
-As part of the analysis I:
-
-- Mapped the **AS-IS process** end-to-end across all touchpoints (web, CRM, BSS/billing, credit bureau, insurance partner)
-- Identified bottlenecks: manual credit verification (1–2 days), paper contract signing (branch visit required), manual SIM activation (24–48 hours)
-- Proposed and documented the **TO-BE process** reducing the journey from 8 steps to 5, with full automation
-- Delivered BPMN diagrams, sequence diagrams, state model and data model as input for the development team
-
-**Result:** End-to-end purchase time reduced from 2–5 days to approximately 15 minutes.
+Work samples from process analysis and system integration projects.
+Diagrams are written as code (Mermaid) so they version-control cleanly alongside documentation.
 
 ---
 
-## Diagrams
+## Projects
 
-### [telecom-purchase-flow.md](telecom-purchase-flow.md)
+### [Telecom — Online Purchase Flow](telecom/)
 
-Full purchase scenario: smartphone on instalment + tariff plan + device insurance.
+Mapped and optimised the e-commerce purchase journey for a bundled offer (smartphone + tariff + device insurance).
 
-| Diagram          | What it shows                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------- |
-| BPMN Flow        | Business process with lanes — customer, system, external systems                                |
-| Sequence Diagram | System-to-system communication — WebShop, CRM, BSS, Credit Bureau, Insurance API, Notifications |
-| State Diagram    | Order lifecycle — from DRAFT through ACTIVE to COMPLETED/CANCELLED                              |
-| ERD              | Data model — Customer, Order, Product, Tariff, Instalment Plan, Insurance Policy, SIM Card      |
-| AS-IS vs TO-BE   | Step-by-step comparison of original vs optimised flow                                           |
+The original flow had too many steps and a high drop-off rate between product selection and order confirmation. I walked through the full AS-IS process, identified the bottlenecks, and proposed a TO-BE flow that reduced the journey from 8 steps to 5 with full backend automation.
+
+Deliverables: process flow diagram, sequence diagram (system-to-system), order state model, data model (ERD), AS-IS vs TO-BE comparison.
 
 ---
 
-## Tools used
+## Tools
 
-- **draw.io** — initial whiteboard sessions with stakeholders
-- **Confluence** — final documentation and stakeholder review
-- **Jira** — user stories and acceptance criteria linked to each process step
-- **Mermaid** — diagrams as code for version control
+Mermaid · draw.io · Confluence · Jira · SQL · REST/SOAP · Postman
