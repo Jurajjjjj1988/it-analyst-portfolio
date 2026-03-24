@@ -18,7 +18,7 @@ The purchase funnel had a high abandonment rate. Customers were dropping off bet
 
 ## Result
 
-End-to-end purchase time: from 2–5 days down to ~15 minutes.
+End-to-end purchase time: from 2–5 days down to under 1 hour for eSIM customers, or 1–2 business days for physical SIM (courier delivery unchanged).
 
 ## Deliverables
 
