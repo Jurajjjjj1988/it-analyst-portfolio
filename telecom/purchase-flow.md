@@ -1,128 +1,128 @@
-# Nákupný scenár — Telefón + Paušál + Poistenie
+# Purchase Scenario — Handset + Tariff + Insurance
 
-> Modeluje kompletný nákupný tok zákazníka v telekomunikačnej spoločnosti.
-> Scenár: zákazník si kúpi smartphone na splátky s paušálnym tarifom a poistením zariadenia.
+> Models the full online purchase journey at a telecommunications company.
+> Scenario: customer buys a smartphone on instalment with a monthly tariff plan and device insurance.
 
 ---
 
-## 1. Purchase Flow — Nákupný proces (telekom.sk)
+## 1. Purchase Flow
 
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Zoznam telefónov\ns paušálom vpravo]
-    B --> C[Vyberie telefón\ndetail produktu]
-    C --> D[Vyberie splátky\nJednorazovo / 24 mes.]
-    D --> E[Vyberie poistenie\nPre istotu Mini / Bez balíčka]
-    E --> F[Pridať do košíka]
-    F --> G{Existujúci\nzákazník?}
-    G -->|áno| H[Prihlásenie\nzľavy na mieru]
-    G -->|nie| I[Nový zákazník\nprejsť do Telekomu]
-    H --> J[Výber čísla]
+    A([Start]) --> B[Handset list\nwith tariff panel]
+    B --> C[Select handset\nproduct detail page]
+    C --> D[Select payment plan\nOne-time / 24 mo.]
+    D --> E[Select insurance\nPre istotu Mini / None]
+    E --> F[Add to cart]
+    F --> G{Existing\ncustomer?}
+    G -->|yes| H[Login\npersonalised discounts]
+    G -->|no| I[New customer\ngo to store]
+    H --> J[Select phone number]
     I --> J
-    J --> K{Preniesť číslo\nalebo nové?}
-    K -->|preniesť| L[Zadá číslo\nod iného operátora]
-    K -->|nové| M[Zriadi nové číslo]
-    L --> N[Výber SIM\nPlastová / eSIM]
+    J --> K{Port existing number\nor new?}
+    K -->|port| L[Enter number\nfrom other carrier]
+    K -->|new| M[Assign new number]
+    L --> N[Select SIM type\nPhysical / eSIM]
     M --> N
-    N --> O[Košík\nzhrnutie + zľavový kupón]
-    O --> P[Checkout:\nOsobné údaje\nmeno, priezvisko, RČ]
-    P --> Q[Systém overí\nrodné číslo + kreditné skóre]
-    Q --> R{Skóre OK?}
-    R -->|nie| S([Zamietnutie splátok])
-    R -->|áno| T[Platba\nkarta / iná metóda]
-    T --> U{Platba\nschválená?}
-    U -->|nie| V[Opakuje platbu]
+    N --> O[Cart summary\n+ promo code]
+    O --> P[Checkout:\nPersonal details\nname, surname, national ID]
+    P --> Q[System verifies\nnational ID + credit score]
+    Q --> R{Score OK?}
+    R -->|no| S([Instalment rejected])
+    R -->|yes| T[Payment\ncard / other method]
+    T --> U{Payment\napproved?}
+    U -->|no| V[Retry payment]
     V --> U
-    U -->|áno| W[Aktivácia\nSIM + paušál + poistenie]
-    W --> X[Potvrdenie\nSMS + Email]
+    U -->|yes| W[Activation\nSIM + tariff + insurance]
+    W --> X[Confirmation\nSMS + Email]
     X --> Y([End])
 
-    subgraph EXTERNÉ SYSTÉMY
-        Q --> C1[(Kreditný búreau)]
-        W --> C2[(BSS/Billing)]
-        W --> C3[(Pre istotu API)]
-        X --> C4[Notifikačný systém]
+    subgraph EXTERNAL SYSTEMS
+        Q --> C1[(Credit Bureau)]
+        W --> C2[(BSS / Billing)]
+        W --> C3[(Insurance API)]
+        X --> C4[Notification Service]
     end
 ```
 
 ---
 
-## 2. Sekvenčný diagram — Systémová komunikácia
+## 2. Sequence Diagram — System Communication
 
 ```mermaid
 sequenceDiagram
-    actor Zákazník
+    actor Customer
     participant WebShop
     participant CRM
     participant CreditCheck
-    participant BSS as BSS/Billing
-    participant Insurance as Poistňovňa
+    participant BSS as BSS / Billing
+    participant Insurance
     participant Notification
 
-    Zákazník->>WebShop: Pridá telefón + paušál do košíka
-    WebShop->>CRM: Overí zákazníka (email/rodné číslo)
-    CRM-->>WebShop: Zákazník existuje / nový
+    Customer->>WebShop: Add handset + tariff to cart
+    WebShop->>CRM: Verify customer (email / national ID)
+    CRM-->>WebShop: Customer found / new
 
-    WebShop->>CreditCheck: Požiadavka na kreditné skóre
-    Note over CreditCheck: Externý bureau (napr. CRIF)
-    CreditCheck-->>WebShop: Skóre 720 / APPROVED
+    WebShop->>CreditCheck: Credit score request
+    Note over CreditCheck: External bureau (e.g. CRIF)
+    CreditCheck-->>WebShop: Score 720 / APPROVED
 
-    WebShop->>Zákazník: Zobrazí dostupné splátky (12/24/36 mes.)
-    Zákazník->>WebShop: Vyberie 24 mesiacov + poistenie
+    WebShop->>Customer: Display instalment options (12 / 24 / 36 mo.)
+    Customer->>WebShop: Select 24 months + insurance
 
-    WebShop->>CRM: Vytvorí objednávku (ORDER_CREATED)
+    WebShop->>CRM: Create order (ORDER_CREATED)
     CRM-->>WebShop: orderId: ORD-2024-8821
 
-    Zákazník->>WebShop: Podpíše zmluvu elektronicky
-    WebShop->>CRM: Aktualizuje stav (CONTRACT_SIGNED)
+    Customer->>WebShop: Sign contract electronically (OTP)
+    WebShop->>CRM: Update status (CONTRACT_SIGNED)
 
-    Zákazník->>WebShop: Platí prvú splátku (kartou)
-    WebShop->>BSS: Spracuj platbu
+    Customer->>WebShop: Pay first instalment (card)
+    WebShop->>BSS: Process payment
     BSS-->>WebShop: PAYMENT_SUCCESS
 
-    WebShop->>BSS: Aktivuj tarif (customerId, planId)
-    BSS-->>WebShop: SIM aktivovaná, tarif aktívny
+    WebShop->>BSS: Activate tariff (customerId, planId)
+    BSS-->>WebShop: SIM activated, tariff active
 
-    WebShop->>BSS: Vytvor splátkovací plán (24x mesačne)
-    BSS-->>WebShop: Plán vytvorený
+    WebShop->>BSS: Create instalment plan (24 × monthly)
+    BSS-->>WebShop: Plan created
 
-    WebShop->>Insurance: Aktivuj poistenie zariadenia
-    Note over Insurance: IMEI, hodnota, zákazník
-    Insurance-->>WebShop: Poistka číslo: INS-2024-5521
+    WebShop->>Insurance: Activate device insurance
+    Note over Insurance: IMEI, device value, customer
+    Insurance-->>WebShop: Policy number: INS-2024-5521
 
-    WebShop->>Notification: Odošli potvrdenie
-    Notification->>Zákazník: SMS: "Vaša objednávka ORD-8821 je potvrdená"
-    Notification->>Zákazník: Email: Zmluva PDF + faktúra
+    WebShop->>Notification: Send confirmation
+    Notification->>Customer: SMS: "Your order ORD-8821 is confirmed"
+    Notification->>Customer: Email: Contract PDF + invoice
 ```
 
 ---
 
-## 3. Stavový diagram — Stavy objednávky
+## 3. State Diagram — Order Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT : zákazník pridá do košíka
+    [*] --> DRAFT : customer adds to cart
 
-    DRAFT --> PENDING_CREDIT : potvrdí košík
-    PENDING_CREDIT --> CREDIT_APPROVED : skóre OK
-    PENDING_CREDIT --> CREDIT_REJECTED : skóre nízke
+    DRAFT --> PENDING_CREDIT : confirms cart
+    PENDING_CREDIT --> CREDIT_APPROVED : score OK
+    PENDING_CREDIT --> CREDIT_REJECTED : score too low
 
-    CREDIT_APPROVED --> PENDING_SIGNATURE : zmluva vygenerovaná
-    PENDING_SIGNATURE --> SIGNED : zákazník podpíše
+    CREDIT_APPROVED --> PENDING_SIGNATURE : contract generated
+    PENDING_SIGNATURE --> SIGNED : customer signs (OTP)
 
-    SIGNED --> PENDING_PAYMENT : čaká na platbu
-    PENDING_PAYMENT --> PAYMENT_FAILED : platba zamietnutá
-    PAYMENT_FAILED --> PENDING_PAYMENT : zákazník opakuje
+    SIGNED --> PENDING_PAYMENT : awaiting payment
+    PENDING_PAYMENT --> PAYMENT_FAILED : payment declined
+    PAYMENT_FAILED --> PENDING_PAYMENT : customer retries
 
-    PENDING_PAYMENT --> PAID : platba úspešná
-    PAID --> ACTIVATING : systém aktivuje služby
-    ACTIVATING --> ACTIVE : SIM + tarif + poistenie aktívne
+    PENDING_PAYMENT --> PAID : payment successful
+    PAID --> ACTIVATING : system activates services
+    ACTIVATING --> ACTIVE : SIM + tariff + insurance active
 
-    ACTIVE --> SUSPENDED : nezaplatená mesačná splátka
-    SUSPENDED --> ACTIVE : zákazník zaplatí
-    SUSPENDED --> CANCELLED : dlhodobé neplatenie
+    ACTIVE --> SUSPENDED : missed monthly instalment
+    SUSPENDED --> ACTIVE : customer pays
+    SUSPENDED --> CANCELLED : prolonged non-payment
 
-    ACTIVE --> COMPLETED : zmluva vypršala (24 mes.)
+    ACTIVE --> COMPLETED : contract expired (24 mo.)
     CREDIT_REJECTED --> [*]
     CANCELLED --> [*]
     COMPLETED --> [*]
@@ -130,7 +130,7 @@ stateDiagram-v2
 
 ---
 
-## 4. ERD — Dátový model
+## 4. ERD — Data Model
 
 ```mermaid
 erDiagram
@@ -152,6 +152,7 @@ erDiagram
         decimal total_amount
         timestamp created_at
         timestamp signed_at
+        timestamp activated_at
     }
 
     ORDER_ITEM {
@@ -189,6 +190,18 @@ erDiagram
         string status
     }
 
+    PAYMENT {
+        uuid id PK
+        uuid order_id FK
+        string method
+        decimal amount
+        string currency
+        string status
+        string gateway_reference
+        timestamp initiated_at
+        timestamp completed_at
+    }
+
     INSURANCE_POLICY {
         uuid id PK
         uuid order_id FK
@@ -214,6 +227,7 @@ erDiagram
     ORDER ||--|{ ORDER_ITEM : "contains"
     ORDER_ITEM }o--|| PRODUCT : "references"
     ORDER ||--o| INSTALLMENT_PLAN : "has"
+    ORDER ||--o{ PAYMENT : "paid via"
     ORDER ||--o| INSURANCE_POLICY : "has"
     CUSTOMER ||--o{ SIM_CARD : "owns"
     SIM_CARD }o--|| TARIFF_PLAN : "uses"
@@ -221,43 +235,43 @@ erDiagram
 
 ---
 
-## 5. Popis skrátenia nákupného scenára
+## 5. AS-IS vs TO-BE
 
-### AS-IS (pôvodný proces — pred optimalizáciou)
-
-```
-Krok 1: Výber telefónu          (1 stránka)
-Krok 2: Výber paušálu           (1 stránka)
-Krok 3: Výber poistenia         (1 stránka)
-Krok 4: Registrácia / Login     (1 stránka)
-Krok 5: Kreditná verifikácia    (manuálne, 1-2 dni)
-Krok 6: Zmluva — tlač, podpis   (pobočka alebo pošta)
-Krok 7: Aktivácia               (manuálne, 24-48 hodín)
-Krok 8: Potvrdenie              (email)
-
-Celkový čas: 2-5 dní
-Kroky: 8
-```
-
-### TO-BE (optimalizovaný proces)
+### AS-IS — before optimisation
 
 ```
-Krok 1: Výber telefónu + paušálu + poistenia  (1 stránka, bundle)
-Krok 2: Identifikácia (eID alebo existujúci účet)
-Krok 3: Automatická kreditná verifikácia      (real-time, API)
-Krok 4: Elektronický podpis                  (OTP cez SMS)
-Krok 5: Platba                               (karta / Apple Pay)
-→ Automatická aktivácia SIM + tarif + poistenie
+Step 1: Select handset            (1 page)
+Step 2: Select tariff plan        (1 page)
+Step 3: Select insurance          (1 page)
+Step 4: Registration / Login      (1 page)
+Step 5: Credit verification       (manual, 1–2 days)
+Step 6: Contract — print, sign    (branch visit or post)
+Step 7: Activation                (manual, 24–48 hours)
+Step 8: Confirmation              (email)
 
-Celkový čas: 15 minút
-Kroky: 5 (z 8 na 5)
+Total time: 2–5 days
+Steps: 8
 ```
 
-### Kde boli odstránené kroky
+### TO-BE — optimised flow
 
-| Odstránený krok                      | Ako                            | Prínos                  |
-| ------------------------------------ | ------------------------------ | ----------------------- |
-| Samostatné stránky pre každý produkt | Bundle výber na 1 stránke      | -3 kroky, -30% drop-off |
-| Manuálna kreditná verifikácia        | Real-time API do Credit Bureau | 2 dni → 3 sekundy       |
-| Papierová zmluva                     | Elektronický podpis cez OTP    | Pobočka nie je potrebná |
-| Manuálna aktivácia                   | API volanie do BSS pri platbe  | 48 hodín → okamžite     |
+```
+Step 1: Select handset + tariff + insurance  (1 page, bundle)
+Step 2: Identify customer (eID or existing account)
+Step 3: Automated credit check               (real-time API, ~3 sec)
+Step 4: Electronic signature                 (OTP via SMS)
+Step 5: Payment                              (card / Apple Pay)
+→ Automatic activation: SIM + tariff + insurance
+
+Total time: ~15 minutes
+Steps: 5 (reduced from 8)
+```
+
+### Where steps were removed
+
+| Removed step                  | How                              | Impact                  |
+| ----------------------------- | -------------------------------- | ----------------------- |
+| Separate page per product     | Bundle selection on 1 page       | −3 steps, −30% drop-off |
+| Manual credit verification    | Real-time API to Credit Bureau   | 2 days → 3 seconds      |
+| Paper contract + branch visit | Electronic signature via OTP     | No branch visit needed  |
+| Manual SIM activation         | API call to BSS on payment event | 48 hours → instant      |

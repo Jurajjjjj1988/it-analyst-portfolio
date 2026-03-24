@@ -1,0 +1,314 @@
+{
+  "info": {
+    "name": "Telecom — Purchase Flow API",
+    "description": "Integration points for the online handset purchase flow.\n\nCoverage: WebShop → CRM → Credit Bureau → BSS/Billing → Insurance API → Notifications\n\nBased on a process optimisation project. All endpoints are illustrative — modelled from the documented integration architecture.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.telekom.example.com/v1",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "CUST-2024-1234",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "ORD-2024-8821",
+      "type": "string"
+    },
+    {
+      "key": "creditBureauApiKey",
+      "value": "{{CREDIT_BUREAU_API_KEY}}",
+      "type": "string"
+    },
+    {
+      "key": "insuranceToken",
+      "value": "{{INSURANCE_BEARER_TOKEN}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. CRM — Verify Customer",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/crm/customers/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["crm", "customers", "verify"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"jan.novak@example.com\",\n  \"national_id\": \"900101/1234\"\n}"
+        },
+        "description": "Called by WebShop at cart confirmation. Returns customer status and any applicable loyalty discounts."
+      },
+      "response": [
+        {
+          "name": "200 — Existing customer",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"customerId\": \"CUST-2024-1234\",\n  \"status\": \"EXISTING\",\n  \"discounts\": [\"LOYAL_10\", \"BUNDLE_5\"]\n}"
+        },
+        {
+          "name": "200 — New customer",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"customerId\": null,\n  \"status\": \"NEW\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Credit Bureau — Credit Score Check",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Api-Key", "value": "{{creditBureauApiKey}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/credit/score",
+          "host": ["{{baseUrl}}"],
+          "path": ["credit", "score"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"national_id\": \"900101/1234\",\n  \"requested_amount\": 799.00,\n  \"currency\": \"EUR\",\n  \"installment_months\": 24\n}"
+        },
+        "description": "External credit bureau call (e.g. CRIF). Triggered after customer confirms their national ID. Must return within 5 seconds (SLA)."
+      },
+      "response": [
+        {
+          "name": "200 — Approved",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"score\": 720,\n  \"decision\": \"APPROVED\",\n  \"max_installment_months\": 36,\n  \"monthly_rate\": 0.0\n}"
+        },
+        {
+          "name": "200 — Rejected",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"score\": 380,\n  \"decision\": \"REJECTED\",\n  \"reason\": \"SCORE_TOO_LOW\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. CRM — Create Order",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/crm/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["crm", "orders"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"items\": [\n    { \"type\": \"DEVICE\", \"sku\": \"SAMSUNG-S24-128\", \"quantity\": 1 },\n    { \"type\": \"TARIFF\", \"planId\": \"GOLD-5G-50GB\" },\n    { \"type\": \"INSURANCE\", \"productId\": \"PRE-ISTOTU-MINI\" }\n  ],\n  \"installmentMonths\": 24,\n  \"simType\": \"ESIM\",\n  \"numberPorting\": false\n}"
+        },
+        "description": "Creates a new order in CRM with status ORDER_CREATED. Returns orderId and a link to the generated contract PDF."
+      },
+      "response": [
+        {
+          "name": "201 — Order Created",
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"orderId\": \"ORD-2024-8821\",\n  \"status\": \"PENDING_SIGNATURE\",\n  \"contractUrl\": \"https://sign.telekom.sk/contracts/ORD-2024-8821\",\n  \"totalAmount\": 799.00,\n  \"monthlyInstalment\": 33.29,\n  \"currency\": \"EUR\"\n}"
+        },
+        {
+          "name": "422 — Credit check not completed",
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"error\": \"CREDIT_CHECK_REQUIRED\",\n  \"message\": \"Credit check must be completed before order creation for instalment purchases.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. CRM — Update Order Status",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/crm/orders/{{orderId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["crm", "orders", "{{orderId}}", "status"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"CONTRACT_SIGNED\",\n  \"signedAt\": \"2024-11-15T14:31:00Z\"\n}"
+        },
+        "description": "Called after the customer successfully submits the OTP. Transitions order from PENDING_SIGNATURE → CONTRACT_SIGNED."
+      },
+      "response": [
+        {
+          "name": "200 — Status updated",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"orderId\": \"ORD-2024-8821\",\n  \"status\": \"CONTRACT_SIGNED\",\n  \"signedAt\": \"2024-11-15T14:31:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "5. BSS — Process Payment",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/bss/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["bss", "payments"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 33.29,\n  \"currency\": \"EUR\",\n  \"method\": \"CARD\",\n  \"gatewayToken\": \"tok_visa_4242\"\n}"
+        },
+        "description": "Processes the first instalment payment. On success, triggers the activation sequence (SIM → tariff → insurance)."
+      },
+      "response": [
+        {
+          "name": "200 — Payment success",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"paymentId\": \"PAY-2024-9901\",\n  \"status\": \"PAYMENT_SUCCESS\",\n  \"gatewayReference\": \"ch_3OxY1A2eZvKYlo2C\"\n}"
+        },
+        {
+          "name": "402 — Payment failed",
+          "status": "Payment Required",
+          "code": 402,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"paymentId\": \"PAY-2024-9902\",\n  \"status\": \"PAYMENT_FAILED\",\n  \"reason\": \"INSUFFICIENT_FUNDS\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. BSS — Activate Tariff & SIM",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/bss/activate",
+          "host": ["{{baseUrl}}"],
+          "path": ["bss", "activate"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"orderId\": \"{{orderId}}\",\n  \"planId\": \"GOLD-5G-50GB\",\n  \"simType\": \"ESIM\",\n  \"msisdn\": \"+421912345678\"\n}"
+        },
+        "description": "Activates SIM card and tariff plan in BSS. For eSIM, provisions the profile over-the-air. Returns ICCID and MSISDN."
+      },
+      "response": [
+        {
+          "name": "200 — Activated",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"simId\": \"SIM-2024-5512\",\n  \"iccid\": \"89421001234567890123\",\n  \"msisdn\": \"+421912345678\",\n  \"status\": \"ACTIVE\",\n  \"activatedAt\": \"2024-11-15T14:32:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. BSS — Create Instalment Plan",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/bss/instalment-plans",
+          "host": ["{{baseUrl}}"],
+          "path": ["bss", "instalment-plans"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"orderId\": \"{{orderId}}\",\n  \"totalAmount\": 799.00,\n  \"currency\": \"EUR\",\n  \"months\": 24,\n  \"monthlyAmount\": 33.29,\n  \"startDate\": \"2024-11-15\"\n}"
+        },
+        "description": "Creates a recurring instalment plan in BSS. Subsequent monthly payments are handled by the billing engine automatically."
+      },
+      "response": [
+        {
+          "name": "201 — Plan created",
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"planId\": \"INST-2024-3301\",\n  \"status\": \"ACTIVE\",\n  \"totalMonths\": 24,\n  \"monthlyAmount\": 33.29,\n  \"nextPaymentDate\": \"2024-12-15\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "8. Insurance API — Activate Policy",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{insuranceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/insurance/policies",
+          "host": ["{{baseUrl}}"],
+          "path": ["insurance", "policies"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"orderId\": \"{{orderId}}\",\n  \"productCode\": \"PRE-ISTOTU-MINI\",\n  \"deviceImei\": \"358240051111110\",\n  \"deviceValue\": 799.00,\n  \"currency\": \"EUR\"\n}"
+        },
+        "description": "Activates device insurance via the Pre istotu partner API. Requires device IMEI and declared value. Returns policy number and coverage dates."
+      },
+      "response": [
+        {
+          "name": "201 — Policy created",
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"policyId\": \"INS-2024-5521\",\n  \"status\": \"ACTIVE\",\n  \"coverageAmount\": 799.00,\n  \"currency\": \"EUR\",\n  \"validFrom\": \"2024-11-15\",\n  \"validTo\": \"2025-11-15\"\n}"
+        },
+        {
+          "name": "400 — Invalid IMEI",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"error\": \"INVALID_IMEI\",\n  \"message\": \"The provided IMEI does not match a recognised device model.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. CRM — Get Order",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/crm/orders/{{orderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["crm", "orders", "{{orderId}}"]
+        },
+        "description": "Retrieves full order detail including current status, linked SIM, insurance policy, and instalment plan."
+      },
+      "response": [
+        {
+          "name": "200 — Active order",
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"orderId\": \"ORD-2024-8821\",\n  \"status\": \"ACTIVE\",\n  \"customerId\": \"CUST-2024-1234\",\n  \"createdAt\": \"2024-11-15T14:30:00Z\",\n  \"signedAt\": \"2024-11-15T14:31:00Z\",\n  \"activatedAt\": \"2024-11-15T14:32:00Z\",\n  \"sim\": { \"iccid\": \"89421001234567890123\", \"msisdn\": \"+421912345678\" },\n  \"insurancePolicy\": \"INS-2024-5521\",\n  \"instalmentPlan\": \"INST-2024-3301\"\n}"
+        },
+        {
+          "name": "404 — Order not found",
+          "status": "Not Found",
+          "code": 404,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"error\": \"ORDER_NOT_FOUND\",\n  \"message\": \"No order found with id ORD-2024-8821.\"\n}"
+        }
+      ]
+    }
+  ]
+}
