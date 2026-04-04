@@ -1,9 +1,6 @@
 # IT Analyst Portfolio
 
-Process analysis and system-integration work samples from real engagements —
-telco e-commerce and multinational logistics. Includes pragmatic
-**AI opportunity assessment**: where AI is the right fix, and where a simpler
-solution wins.
+Process analysis work: BPMN, AS-IS / TO-BE, API mapping, and AI vs non-AI bottleneck triage.
 
 [![Mermaid](https://img.shields.io/badge/Mermaid-diagrams%20as%20code-FF3E00)](https://mermaid.js.org/)
 [![BPMN](https://img.shields.io/badge/BPMN-AS--IS%20%2F%20TO--BE-3178c6)](https://www.bpmn.org/)
